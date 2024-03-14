@@ -7,6 +7,7 @@ import (
 
 // Result of a single request
 type ParalelResult struct {
+	Id     string
 	Result any
 	Error  error
 }
@@ -50,26 +51,57 @@ func (rqst *ParalelRqst) Execute() map[string]ParalelResult {
 	var wg sync.WaitGroup
 	for _, requestConfig := range rqst.requests {
 		requestConfig := requestConfig
+		requestId := requestConfig.Id
+		req := requestConfig.CreateRequest()
 		wg.Add(1)
-		go func() {
-			req := requestConfig.CreateRequest()
-			response, err := rqst.executor.Do(req)
+		go func(request *http.Request) {
+			defer wg.Done()
+			response, err := rqst.executor.Do(request)
 			if err != nil {
-				results[requestConfig.Id] = ParalelResult{Error: err}
-				defer wg.Done()
+				results[requestId] = ParalelResult{Id: requestId, Error: err}
 				return
 			}
 			mappedData, err := requestConfig.ResultMapper(response)
 			if err != nil {
-				results[requestConfig.Id] = ParalelResult{Error: err}
-				defer wg.Done()
+				results[requestId] = ParalelResult{Id: requestId, Error: err}
 				return
 			}
-			results[requestConfig.Id] = ParalelResult{Result: mappedData}
-			defer wg.Done()
+			results[requestId] = ParalelResult{Id: requestId, Result: mappedData}
 			return
-		}()
+		}(req)
 	}
 	wg.Wait()
 	return results
+}
+
+// Execute all requests at once and emit all results to channel
+func (rqst *ParalelRqst) ExecuteWithChan() <-chan ParalelResult {
+	resChan := make(chan ParalelResult)
+	var wg sync.WaitGroup
+	for _, requestConfig := range rqst.requests {
+		requestConfig := requestConfig
+		requestId := requestConfig.Id
+		wg.Add(1)
+		req := requestConfig.CreateRequest()
+		go func(request *http.Request) {
+			defer wg.Done()
+			response, err := rqst.executor.Do(request)
+			if err != nil {
+				resChan <- ParalelResult{Id: requestId, Error: err}
+				return
+			}
+			mappedData, err := requestConfig.ResultMapper(response)
+			if err != nil {
+				resChan <- ParalelResult{Id: requestId, Error: err}
+				return
+			}
+			resChan <- ParalelResult{Id: requestId, Result: mappedData}
+			return
+		}(req)
+	}
+	go func() {
+		wg.Wait()
+		close(resChan)
+	}()
+	return resChan
 }

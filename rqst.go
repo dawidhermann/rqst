@@ -8,7 +8,7 @@ import (
 // Rqst is basic struct for helping transform chain of requests
 type Rqst struct {
 	executor *http.Client
-	requests []*RequestConfig
+	requests []RequestConfig
 }
 
 // A single request configuration
@@ -23,18 +23,18 @@ type RequestConfig struct {
 func New(requestExecutor *http.Client) *Rqst {
 	return &Rqst{
 		executor: requestExecutor,
-		requests: make([]*RequestConfig, 0),
+		requests: make([]RequestConfig, 0),
 	}
 }
 
 // Add next request to execution chain
-func (rqst *Rqst) AddNextRequest(requestConfig *RequestConfig) *Rqst {
+func (rqst *Rqst) AddNextRequest(requestConfig RequestConfig) *Rqst {
 	rqst.requests = append(rqst.requests, requestConfig)
 	return rqst
 }
 
 // Add multiple requests to execution chain at once
-func (rqst *Rqst) AddNextMultipleRequests(requestConfigs ...*RequestConfig) *Rqst {
+func (rqst *Rqst) AddNextMultipleRequests(requestConfigs ...RequestConfig) *Rqst {
 	rqst.requests = append(rqst.requests, requestConfigs...)
 	return rqst
 }

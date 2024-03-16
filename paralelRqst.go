@@ -15,7 +15,7 @@ type ParalelResult struct {
 // Helper for executing multiple requests at once
 type ParalelRqst struct {
 	executor *http.Client
-	requests []*ParalelRequestConfig
+	requests []ParalelRequestConfig
 }
 
 // Configuration for a single paralel request
@@ -29,18 +29,18 @@ type ParalelRequestConfig struct {
 func NewParalel(requestExecutor *http.Client) *ParalelRqst {
 	return &ParalelRqst{
 		executor: requestExecutor,
-		requests: make([]*ParalelRequestConfig, 0),
+		requests: make([]ParalelRequestConfig, 0),
 	}
 }
 
 // Add new paralel request to execution list
-func (rqst *ParalelRqst) AddNextParalelRequest(requestConfig *ParalelRequestConfig) *ParalelRqst {
+func (rqst *ParalelRqst) AddNextParalelRequest(requestConfig ParalelRequestConfig) *ParalelRqst {
 	rqst.requests = append(rqst.requests, requestConfig)
 	return rqst
 }
 
 // Add multiple new requests to execution list
-func (rqst *ParalelRqst) AddNextMultipleParalelRequests(requestConfigs ...*ParalelRequestConfig) *ParalelRqst {
+func (rqst *ParalelRqst) AddNextMultipleParalelRequests(requestConfigs ...ParalelRequestConfig) *ParalelRqst {
 	rqst.requests = append(rqst.requests, requestConfigs...)
 	return rqst
 }
@@ -49,11 +49,11 @@ func (rqst *ParalelRqst) AddNextMultipleParalelRequests(requestConfigs ...*Paral
 func (rqst *ParalelRqst) Execute() map[string]ParalelResult {
 	results := make(map[string]ParalelResult)
 	var wg sync.WaitGroup
+	wg.Add(len(rqst.requests))
 	for _, requestConfig := range rqst.requests {
 		requestConfig := requestConfig
 		requestId := requestConfig.Id
 		req := requestConfig.CreateRequest()
-		wg.Add(1)
 		go func(request *http.Request) {
 			defer wg.Done()
 			response, err := rqst.executor.Do(request)
@@ -76,28 +76,28 @@ func (rqst *ParalelRqst) Execute() map[string]ParalelResult {
 
 // Execute all requests at once and emit all results to channel
 func (rqst *ParalelRqst) ExecuteWithChan() <-chan ParalelResult {
-	resChan := make(chan ParalelResult)
+	resChan := make(chan ParalelResult, len(rqst.requests))
 	var wg sync.WaitGroup
+	wg.Add(len(rqst.requests))
 	for _, requestConfig := range rqst.requests {
 		requestConfig := requestConfig
 		requestId := requestConfig.Id
-		wg.Add(1)
 		req := requestConfig.CreateRequest()
-		go func(request *http.Request) {
+		go func(request *http.Request, resultChan chan<- ParalelResult) {
 			defer wg.Done()
 			response, err := rqst.executor.Do(request)
 			if err != nil {
-				resChan <- ParalelResult{Id: requestId, Error: err}
+				resultChan <- ParalelResult{Id: requestId, Error: err}
 				return
 			}
 			mappedData, err := requestConfig.ResultMapper(response)
 			if err != nil {
-				resChan <- ParalelResult{Id: requestId, Error: err}
+				resultChan <- ParalelResult{Id: requestId, Error: err}
 				return
 			}
-			resChan <- ParalelResult{Id: requestId, Result: mappedData}
+			resultChan <- ParalelResult{Id: requestId, Result: mappedData}
 			return
-		}(req)
+		}(req, resChan)
 	}
 	go func() {
 		wg.Wait()

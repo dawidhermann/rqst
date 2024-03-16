@@ -40,7 +40,7 @@ func TestAddRequest(t *testing.T) {
 			return response, nil
 		},
 	}
-	rqstInstance := rqst.New(server.Client()).AddNextRequest(&requestConfig)
+	rqstInstance := rqst.New(server.Client()).AddNextRequest(requestConfig)
 	result := rqstInstance.Execute()
 	if result == nil {
 		t.Error("Invalid result")
@@ -76,7 +76,7 @@ func TestAddMultipleRequests(t *testing.T) {
 			return response, nil
 		},
 	}
-	rqstInstance := rqst.New(server.Client()).AddNextMultipleRequests(&firstRequestConfig, &secondRequestConfig)
+	rqstInstance := rqst.New(server.Client()).AddNextMultipleRequests(firstRequestConfig, secondRequestConfig)
 	result := rqstInstance.Execute()
 	if result == nil {
 		t.Error("Invalid result")
@@ -124,7 +124,7 @@ func TestCombinedMultipleRequests(t *testing.T) {
 			return response, nil
 		},
 	}
-	rqstInstance := rqst.New(server.Client()).AddNextRequest(&firstRequestConfig).AddNextMultipleRequests(&secondRequestConfig, &thirdRequestConfig)
+	rqstInstance := rqst.New(server.Client()).AddNextRequest(firstRequestConfig).AddNextMultipleRequests(secondRequestConfig, thirdRequestConfig)
 	result := rqstInstance.Execute()
 	if result == nil {
 		t.Error("Invalid result")
@@ -164,7 +164,7 @@ func TestMappingRequest(t *testing.T) {
 			return number + 1, nil
 		},
 	}
-	rqstInstance := rqst.New(server.Client()).AddNextRequest(&requestConfig)
+	rqstInstance := rqst.New(server.Client()).AddNextRequest(requestConfig)
 	result := rqstInstance.Execute()
 	if result != 4 {
 		t.Error("Failed to get mapped response: ", result)
@@ -239,7 +239,7 @@ func TestRawResultInterceptor(t *testing.T) {
 			return number + 1, nil
 		},
 	}
-	rqstInstance := rqst.New(server.Client()).AddNextMultipleRequests(&firstRequestConfig, &secondRequestConfig)
+	rqstInstance := rqst.New(server.Client()).AddNextMultipleRequests(firstRequestConfig, secondRequestConfig)
 	result := rqstInstance.Execute()
 	if result != 4 {
 		t.Error("Failed to get mapped response: ", result)

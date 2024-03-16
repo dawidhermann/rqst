@@ -39,7 +39,7 @@ func TestAddParalelRequest(t *testing.T) {
 			return response, nil
 		},
 	}
-	rqstInstance := rqst.NewParalel(server.Client()).AddNextParalelRequest(&requestConfig)
+	rqstInstance := rqst.NewParalel(server.Client()).AddNextParalelRequest(requestConfig)
 	result := rqstInstance.Execute()
 	if result == nil {
 		t.Error("Invalid result")
@@ -77,7 +77,7 @@ func TestAddMultipleParalelRequests(t *testing.T) {
 			return response, nil
 		},
 	}
-	rqstInstance := rqst.NewParalel(server.Client()).AddNextMultipleParalelRequests(&firstRequestConfig, &secondRequestConfig)
+	rqstInstance := rqst.NewParalel(server.Client()).AddNextMultipleParalelRequests(firstRequestConfig, secondRequestConfig)
 	result := rqstInstance.Execute()
 	if result == nil {
 		t.Error("Invalid result")
@@ -128,7 +128,7 @@ func TestCombinedMultipleParalelRequests(t *testing.T) {
 			return response, nil
 		},
 	}
-	rqstInstance := rqst.NewParalel(server.Client()).AddNextParalelRequest(&firstRequestConfig).AddNextMultipleParalelRequests(&secondRequestConfig, &thirdRequestConfig)
+	rqstInstance := rqst.NewParalel(server.Client()).AddNextParalelRequest(firstRequestConfig).AddNextMultipleParalelRequests(secondRequestConfig, thirdRequestConfig)
 	result := rqstInstance.Execute()
 	if result == nil {
 		t.Error("Invalid result")
@@ -190,7 +190,7 @@ func TestMappingParalelRequest(t *testing.T) {
 			return number + 1, nil
 		},
 	}
-	rqstInstance := rqst.NewParalel(server.Client()).AddNextParalelRequest(&requestConfig).AddNextParalelRequest(&secondRequestConfig)
+	rqstInstance := rqst.NewParalel(server.Client()).AddNextParalelRequest(requestConfig).AddNextParalelRequest(secondRequestConfig)
 	result := rqstInstance.Execute()
 	if result["requestConfig"].Result != 4 {
 		t.Error("Failed to get mapped response: ", result)
@@ -255,7 +255,7 @@ func TestMappingParalelChanRequest(t *testing.T) {
 			return number + 1, nil
 		},
 	}
-	rqstInstance := rqst.NewParalel(server.Client()).AddNextParalelRequest(&requestConfig).AddNextParalelRequest(&secondRequestConfig)
+	rqstInstance := rqst.NewParalel(server.Client()).AddNextParalelRequest(requestConfig).AddNextParalelRequest(secondRequestConfig)
 	resultChan := rqstInstance.ExecuteWithChan()
 	for result := range resultChan {
 		if result.Id == "requestConfig" && result.Result != 4 {
